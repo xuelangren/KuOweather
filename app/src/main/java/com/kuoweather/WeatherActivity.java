@@ -1,5 +1,6 @@
 package com.kuoweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.kuoweather.Gson.Weather;
+import com.kuoweather.service.AutoUpdateService;
 import com.kuoweather.util.HttpUtil;
 import com.kuoweather.util.Utility;
 
@@ -169,38 +171,46 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void showWeatherInfo(Weather weather) {
-        String city = weather.getBasic().getCity();
-        String time = weather.getBasic().getUpdate().getLoc().split(" ")[1];
-        String degree = weather.getNow().getTmp() + "℃";
-        String info = weather.getNow().getCond().getTxt();
-        tittleCity.setText(city);
-        titleUpdateTime.setText(time);
-        tvDegree.setText(degree);
-        tvWeatherInfo.setText(info);
-        forecastLayout.removeAllViews();
-        for (Weather.DailyForecastBean forecast : weather.getDaily_forecast()) {
-            View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
-            TextView tvData = (TextView) view.findViewById(R.id.tv_data);
-            TextView tvInfo = (TextView) view.findViewById(R.id.tv_info);
-            TextView tvMin = (TextView) view.findViewById(R.id.tv_min);
-            TextView tvMax = (TextView) view.findViewById(R.id.tv_max);
-            tvData.setText(forecast.getDate());
-            tvInfo.setText(forecast.getCond().getTxt_d());
-            tvMin.setText(forecast.getTmp().getMin());
-            tvMax.setText(forecast.getTmp().getMax());
-            forecastLayout.addView(view);
+        if (weather != null && "ok".equals(weather.getStatus())) {
+            String city = weather.getBasic().getCity();
+            String time = weather.getBasic().getUpdate().getLoc().split(" ")[1];
+            String degree = weather.getNow().getTmp() + "℃";
+            String info = weather.getNow().getCond().getTxt();
+            tittleCity.setText(city);
+            titleUpdateTime.setText(time);
+            tvDegree.setText(degree);
+            tvWeatherInfo.setText(info);
+            forecastLayout.removeAllViews();
+            for (Weather.DailyForecastBean forecast : weather.getDaily_forecast()) {
+                View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
+                TextView tvData = (TextView) view.findViewById(R.id.tv_data);
+                TextView tvInfo = (TextView) view.findViewById(R.id.tv_info);
+                TextView tvMin = (TextView) view.findViewById(R.id.tv_min);
+                TextView tvMax = (TextView) view.findViewById(R.id.tv_max);
+                tvData.setText(forecast.getDate());
+                tvInfo.setText(forecast.getCond().getTxt_d());
+                tvMin.setText(forecast.getTmp().getMin());
+                tvMax.setText(forecast.getTmp().getMax());
+                forecastLayout.addView(view);
+            }
+            if (weather.getAqi() != null) {
+                tvAqi.setText(weather.getAqi().getCity().getAqi());
+                tvPm.setText(weather.getAqi().getCity().getPm25());
+            }
+            String comf = weather.getSuggestion().getComf().getTxt();
+            String sprot = weather.getSuggestion().getSport().getTxt();
+            String wash = weather.getSuggestion().getCw().getTxt();
+            tvComfort.setText("舒适度：" + comf);
+            tvSport.setText("运动建议：" + sprot);
+            tvWash.setText("洗车度：" + wash);
+            svWeatherLayout.setVisibility(View.VISIBLE);
+            Intent intent = new Intent(this, AutoUpdateService.class);
+            startService(intent);
+        } else {
+            Toast.makeText(this, "获取天气失败", Toast.LENGTH_SHORT).show();
         }
-        if (weather.getAqi() != null) {
-            tvAqi.setText(weather.getAqi().getCity().getAqi());
-            tvPm.setText(weather.getAqi().getCity().getPm25());
-        }
-        String comf = weather.getSuggestion().getComf().getTxt();
-        String sprot = weather.getSuggestion().getSport().getTxt();
-        String wash = weather.getSuggestion().getCw().getTxt();
-        tvComfort.setText("舒适度：" + comf);
-        tvSport.setText("运动建议：" + sprot);
-        tvWash.setText("洗车度：" + wash);
-        svWeatherLayout.setVisibility(View.VISIBLE);
+
+
     }
 
     @OnClick(R.id.nav_button)
